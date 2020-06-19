@@ -16,7 +16,7 @@ warnings.filterwarnings("ignore", category=UserWarning)
 
 # Cell
 NUM_WORKERS = cpu_count()
-SAMPLE_RATE = 48_000
+SAMPLE_RATE = 32_000
 
 # Cell
 
