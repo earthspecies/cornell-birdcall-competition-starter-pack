@@ -2,9 +2,14 @@
 
 __all__ = ["index", "modules", "custom_doc_links", "git_url"]
 
-index = {}
+index = {"NUM_WORKERS": "01_getting_started.ipynb",
+         "SAMPLE_RATE": "01_getting_started.ipynb",
+         "get_items": "01_getting_started.ipynb",
+         "trn_val_split_items": "01_getting_started.ipynb",
+         "calculate_mean_and_std": "01_getting_started.ipynb",
+         "AudioDataset": "01_getting_started.ipynb"}
 
-modules = []
+modules = ["data.py"]
 
 doc_url = "https://earthspecies.github.io/birdcall/"
 
