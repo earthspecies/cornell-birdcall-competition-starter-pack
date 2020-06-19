@@ -7,9 +7,14 @@ index = {"NUM_WORKERS": "01_getting_started.ipynb",
          "get_items": "01_getting_started.ipynb",
          "trn_val_split_items": "01_getting_started.ipynb",
          "calculate_mean_and_std": "01_getting_started.ipynb",
-         "AudioDataset": "01_getting_started.ipynb"}
+         "AudioDataset": "01_getting_started.ipynb",
+         "preds_to_tp_fp_fn": "02_train_on_raw_audio.ipynb",
+         "precision": "02_train_on_raw_audio.ipynb",
+         "recall": "02_train_on_raw_audio.ipynb",
+         "f1": "02_train_on_raw_audio.ipynb"}
 
-modules = ["data.py"]
+modules = ["data.py",
+           "metrics.py"]
 
 doc_url = "https://earthspecies.github.io/birdcall/"
 
