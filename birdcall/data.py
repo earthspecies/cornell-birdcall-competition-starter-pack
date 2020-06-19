@@ -20,7 +20,7 @@ SAMPLE_RATE = 48_000
 
 # Cell
 
-def get_items():
+def get_items(n_per_class=1000):
     len_df = pd.read_pickle('data/ebird_path_duration.pkl')
     items = []
 
@@ -29,11 +29,11 @@ def get_items():
 
         examples = [(species.path.stem, species.path, o) for o in begin_offsets]
 
-        if len(examples) < 1000:
-            examples = examples * (1000 // 3 + 1)
+        if len(examples) < n_per_class:
+            examples = examples * (n_per_class // len(examples) + 1)
         else:
             np.random.shuffle(examples)
-        items += examples[:1000]
+        items += examples[:n_per_class]
 
     classes = [itm[0] for itm in items]
 
@@ -68,8 +68,13 @@ class AudioDataset(Dataset):
         cls, path, offset = self.items[idx]
         x, _ = sf.read(path, SAMPLE_RATE*5, start=offset)
         if self.do_norm: x = self.normalize(x)
-        return x, self.vocab.index(cls)
+        y = self.vocab.index(cls)
+        return x.astype(np.float32), self.one_hot_encode(y)
     def normalize(self, x):
         return (x - self.mean) / self.std
+    def one_hot_encode(self, y):
+        one_hot = np.zeros((len(self.vocab)))
+        one_hot[y] = 1
+        return one_hot
     def __len__(self):
         return len(self.items)
