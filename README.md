@@ -20,6 +20,6 @@ This section will contain reference material that can be useful for getting star
 
 **Competition specific information**
 
-To stand a chance in a Kaggle competition, you need to read eveeerything posted in the discussions. The amount of information the community accumulates over the course of a competition is immense. Here are some threads that stand out:
+To stand a chance in a Kaggle competition, you need to read everything posted in the discussions. The amount of information the community accumulates over the course of a competition is immense. Here are some threads that stand out:
 
 1.[ What portion of clips](https://www.kaggle.com/c/birdsong-recognition/discussion/159492) in the test set have birds signing?
