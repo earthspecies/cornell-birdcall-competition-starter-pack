@@ -12,6 +12,9 @@ entries:
     - output: web,pdf
       title: module name here
       url: /core
+    - output: web,pdf
+      title: Title
+      url: /infer_on_provided_data
     output: web
     title: birdcall
   output: web

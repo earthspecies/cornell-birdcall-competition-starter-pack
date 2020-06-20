@@ -8,6 +8,8 @@ This repository is powered by [nbdev](https://github.com/fastai/nbdev) - your on
 
 Please reach out if you have any questions, check out the conversations in the issues! This is a shared effort and all contributions are welcome!
 
+**PLEASE NOTE**: The code in this repository will walk you from downloading the data through training all the way to performing inference on data similar to that in the test set (though sampled from a different distribution). For steps required to perform inference on the hidden test set and make a submission on Kaggle please consult this [post](https://www.kaggle.com/c/birdsong-recognition/discussion/160222). 
+
 ## What you need to know
 
 This section will contain reference material that can be useful for getting started.

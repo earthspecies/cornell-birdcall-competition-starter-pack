@@ -5,7 +5,7 @@ __all__ = ['preds_to_tp_fp_fn', 'precision', 'recall', 'f1']
 # Cell
 
 def preds_to_tp_fp_fn(preds, targs):
-    positives = preds.sigmoid() > 0.5
+    positives = preds > 0.5
     true_positives = positives[targs == 1]
     false_positives = positives[targs != 1]
     negatives = ~positives

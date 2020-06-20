@@ -1,6 +1,7 @@
 {
   "birdcall": {
     "Overview": "/",
-    "module name here": "/core"
+    "module name here": "/core",
+    "Title": "/infer_on_provided_data"
   }
 }
