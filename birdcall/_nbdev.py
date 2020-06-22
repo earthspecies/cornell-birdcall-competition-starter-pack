@@ -4,10 +4,10 @@ __all__ = ["index", "modules", "custom_doc_links", "git_url"]
 
 index = {"NUM_WORKERS": "01_getting_started.ipynb",
          "SAMPLE_RATE": "01_getting_started.ipynb",
-         "get_items": "01_getting_started.ipynb",
-         "trn_val_split_items": "01_getting_started.ipynb",
-         "calculate_mean_and_std": "01_getting_started.ipynb",
          "AudioDataset": "01_getting_started.ipynb",
+         "classes": "01_getting_started.ipynb",
+         "train_ds": "01_getting_started.ipynb",
+         "valid_ds": "01_getting_started.ipynb",
          "preds_to_tp_fp_fn": "02_train_on_raw_audio.ipynb",
          "precision": "02_train_on_raw_audio.ipynb",
          "recall": "02_train_on_raw_audio.ipynb",
