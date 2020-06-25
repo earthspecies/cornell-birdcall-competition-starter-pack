@@ -66,8 +66,15 @@ train_ds = AudioDataset(pd.read_pickle('data/train_set.pkl'), classes, mean=1.65
 valid_ds = AudioDataset(pd.read_pickle('data/val_set.pkl'), classes, len_mult=10, mean=1.6537946e-05, std=0.04572224)
 
 # Comes from 01a_spectrogram_dataset.ipynb, cell
+
+import scipy
+
 def audio_to_spec(audio):
+    f, t, spec = scipy.signal.spectrogram(audio, fs=SAMPLE_RATE)#, nperseg=360)
+    spec = np.log10(spec.clip(1e-10))
+    return spec[10:100]
     spec = librosa.power_to_db(
+#         librosa.feature.melspectrogram(audio, sr=SAMPLE_RATE, fmin=20, fmax=16000, n_mels=224, hop_length=360)
         librosa.feature.melspectrogram(audio, sr=SAMPLE_RATE, fmin=20, fmax=16000, n_mels=128)
 #         librosa.feature.melspectrogram(audio, sr=SAMPLE_RATE, hop_length=1255, fmin=20, fmax=16000)
     )
@@ -103,6 +110,7 @@ class SpectrogramDataset(Dataset):
 
         return img.astype(np.float32), self.one_hot_encode(cls_idx)
     def normalize(self, x):
+        return ((x - x.min()) / (x.max() - x.min() + 1e-8) - 0.11754986) / 0.16654329
         x = (x - self.spec_min) / (self.spec_max - self.spec_min)
         return (x - 0.36829123) / 0.08813263
 
