@@ -8,7 +8,13 @@ This repository is powered by [nbdev](https://github.com/fastai/nbdev) - your on
 
 Please reach out if you have any questions, check out the conversations in the issues! This is a shared effort and all contributions are welcome!
 
-**PLEASE NOTE**: The code in this repository will walk you from downloading the data through training all the way to performing inference on data similar to that in the test set (though sampled from a different distribution). For steps required to perform inference on the hidden test set and make a submission on Kaggle please consult this [post](https://www.kaggle.com/c/birdsong-recognition/discussion/160222). 
+**PLEASE NOTE**: The code in this repository will walk you from downloading the data through training all the way to performing inference on data similar to that in the test set (though sampled from a different distribution). For steps required to perform inference on the hidden test set and make a submission on Kaggle (as well as for further details on the modelling approach) please consult the following posts:
+
+1. [ESP Starter Pack v1](https://www.kaggle.com/c/birdsong-recognition/discussion/160222) - simple classifier trained on 5 second excerpts.
+2. [ESP Starter Pack v2](https://www.kaggle.com/c/birdsong-recognition/discussion/161860) - Multi Instance Learning based on 
+this fantastic [paper](http://ceur-ws.org/Vol-2125/paper_181.pdf) by Jan Schlüter.
+
+*This community effort is supported by The Earth Species Project. In our quest to decode non-human communication, we plan to sharpen our toolset through sharing with and learning from the bioacoustic research community. You can learn more about who we are on our [website](https://earthspecies.org/).*
 
 ## What you need to know
 

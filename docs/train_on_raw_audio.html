@@ -42,12 +42,6 @@ sidebar: home_sidebar
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">birdcall.data</span> <span class="kn">import</span> <span class="o">*</span>
-
-<span class="n">items</span><span class="p">,</span> <span class="n">classes</span> <span class="o">=</span> <span class="n">get_items</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span>
-<span class="n">trn_idxs</span><span class="p">,</span> <span class="n">val_idxs</span> <span class="o">=</span> <span class="n">trn_val_split_items</span><span class="p">(</span><span class="n">items</span><span class="p">,</span> <span class="mi">10</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-<span class="n">mean</span><span class="p">,</span> <span class="n">std</span> <span class="o">=</span> <span class="n">calculate_mean_and_std</span><span class="p">(</span><span class="n">items</span><span class="p">,</span> <span class="n">trn_idxs</span><span class="p">)</span>
-<span class="n">trn_ds</span> <span class="o">=</span> <span class="n">AudioDataset</span><span class="p">(</span><span class="n">items</span><span class="p">[</span><span class="n">trn_idxs</span><span class="p">],</span> <span class="n">classes</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">std</span><span class="p">)</span>
-<span class="n">val_ds</span> <span class="o">=</span> <span class="n">AudioDataset</span><span class="p">(</span><span class="n">items</span><span class="p">[</span><span class="n">val_idxs</span><span class="p">],</span> <span class="n">classes</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">std</span><span class="p">)</span>
 </pre></div>
 
     </div>
@@ -64,7 +58,7 @@ sidebar: home_sidebar
 
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="nb">len</span><span class="p">(</span><span class="n">trn_ds</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">val_ds</span><span class="p">)</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="nb">len</span><span class="p">(</span><span class="n">train_ds</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">valid_ds</span><span class="p">)</span>
 </pre></div>
 
     </div>
@@ -79,7 +73,7 @@ sidebar: home_sidebar
 
 
 <div class="output_text output_subarea output_execute_result">
-<pre>(237600, 26400)</pre>
+<pre>(5280, 2640)</pre>
 </div>
 
 </div>
@@ -107,63 +101,6 @@ sidebar: home_sidebar
 </div>
     {% endraw %}
 
-<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>We need some sort of architecture to get started - the one adapted from this <a href="https://www.groundai.com/project/end-to-end-environmental-sound-classification-using-a-1d-convolutional-neural-network/1">paper</a> seems like a good place to start</p>
-
-</div>
-</div>
-</div>
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">NUM_WORKERS</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-<div class="output_area">
-
-
-
-<div class="output_text output_subarea output_execute_result">
-<pre>8</pre>
-</div>
-
-</div>
-
-</div>
-</div>
-
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">NUM_WORKERS</span> <span class="o">-=</span> <span class="mi">1</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div>
-    {% endraw %}
-
     {% raw %}
     
 <div class="cell border-box-sizing code_cell rendered">
@@ -174,8 +111,8 @@ sidebar: home_sidebar
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">BS</span> <span class="o">=</span> <span class="mi">128</span>
 
 <span class="n">dls</span> <span class="o">=</span> <span class="n">DataLoaders</span><span class="p">(</span>
-    <span class="n">DataLoader</span><span class="p">(</span><span class="n">dataset</span><span class="o">=</span><span class="n">trn_ds</span><span class="p">,</span> <span class="n">bs</span><span class="o">=</span><span class="n">BS</span><span class="p">,</span> <span class="n">num_workers</span><span class="o">=</span><span class="n">NUM_WORKERS</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
-    <span class="n">DataLoader</span><span class="p">(</span><span class="n">dataset</span><span class="o">=</span><span class="n">val_ds</span><span class="p">,</span> <span class="n">bs</span><span class="o">=</span><span class="n">BS</span><span class="p">,</span> <span class="n">num_workers</span><span class="o">=</span><span class="n">NUM_WORKERS</span><span class="p">)</span>
+    <span class="n">DataLoader</span><span class="p">(</span><span class="n">dataset</span><span class="o">=</span><span class="n">train_ds</span><span class="p">,</span> <span class="n">bs</span><span class="o">=</span><span class="n">BS</span><span class="p">,</span> <span class="n">num_workers</span><span class="o">=</span><span class="n">NUM_WORKERS</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+    <span class="n">DataLoader</span><span class="p">(</span><span class="n">dataset</span><span class="o">=</span><span class="n">valid_ds</span><span class="p">,</span> <span class="n">bs</span><span class="o">=</span><span class="n">BS</span><span class="p">,</span> <span class="n">num_workers</span><span class="o">=</span><span class="n">NUM_WORKERS</span><span class="p">)</span>
 <span class="p">)</span><span class="o">.</span><span class="n">cuda</span><span class="p">()</span>
 </pre></div>
 
@@ -194,7 +131,7 @@ sidebar: home_sidebar
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">b</span> <span class="o">=</span> <span class="n">dls</span><span class="o">.</span><span class="n">train</span><span class="o">.</span><span class="n">one_batch</span><span class="p">()</span>
-<span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
+<span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
 </pre></div>
 
     </div>
@@ -209,7 +146,40 @@ sidebar: home_sidebar
 
 
 <div class="output_text output_subarea output_execute_result">
-<pre>torch.Size([128, 160000])</pre>
+<pre>(torch.Size([128, 160000]), torch.Size([128, 264]))</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span> <span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">std</span><span class="p">()</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>(tensor(-0.0018, device=&#39;cuda:0&#39;), tensor(1.3341, device=&#39;cuda:0&#39;))</pre>
 </div>
 
 </div>
@@ -222,7 +192,7 @@ sidebar: home_sidebar
 
 <div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Let's define our architecture</p>
+<p>We need some sort of architecture to get started - the one adapted from this <a href="https://www.groundai.com/project/end-to-end-environmental-sound-classification-using-a-1d-convolutional-neural-network/1">paper</a> seems like a good place to start. Bear in mind though that it was designed with considering the entire recording and with environment classification in mind - it's performance on a task like that at hand might be subpaar. Revisiting the architecture at a later time might be a good idea.</p>
 
 </div>
 </div>
@@ -399,7 +369,7 @@ sidebar: home_sidebar
 
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">learn</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">)</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">learn</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">)</span>
 </pre></div>
 
     </div>
@@ -428,12 +398,273 @@ sidebar: home_sidebar
   <tbody>
     <tr>
       <td>0</td>
-      <td>0.000191</td>
-      <td>0.000087</td>
-      <td>1.000000</td>
-      <td>0.999735</td>
-      <td>0.999867</td>
-      <td>03:23</td>
+      <td>0.668979</td>
+      <td>0.592719</td>
+      <td>0.012128</td>
+      <td>0.004167</td>
+      <td>0.006202</td>
+      <td>00:07</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>0.466117</td>
+      <td>0.205683</td>
+      <td>0.002481</td>
+      <td>0.000379</td>
+      <td>0.000657</td>
+      <td>00:09</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>0.241570</td>
+      <td>0.060500</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>00:12</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>0.124670</td>
+      <td>0.035940</td>
+      <td>0.025641</td>
+      <td>0.000379</td>
+      <td>0.000747</td>
+      <td>00:12</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>0.070555</td>
+      <td>0.029092</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>00:12</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>0.045886</td>
+      <td>0.027578</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>00:12</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td>0.034517</td>
+      <td>0.025608</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>00:12</td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td>0.029238</td>
+      <td>0.025046</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>00:12</td>
+    </tr>
+    <tr>
+      <td>8</td>
+      <td>0.026782</td>
+      <td>0.024864</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>00:12</td>
+    </tr>
+    <tr>
+      <td>9</td>
+      <td>0.025567</td>
+      <td>0.024558</td>
+      <td>nan</td>
+      <td>0.000000</td>
+      <td>nan</td>
+      <td>00:12</td>
+    </tr>
+    <tr>
+      <td>10</td>
+      <td>0.024988</td>
+      <td>0.024467</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>00:12</td>
+    </tr>
+    <tr>
+      <td>11</td>
+      <td>0.024681</td>
+      <td>0.024603</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>00:12</td>
+    </tr>
+    <tr>
+      <td>12</td>
+      <td>0.024535</td>
+      <td>0.024184</td>
+      <td>nan</td>
+      <td>0.000000</td>
+      <td>nan</td>
+      <td>00:12</td>
+    </tr>
+    <tr>
+      <td>13</td>
+      <td>0.024364</td>
+      <td>0.024232</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>00:12</td>
+    </tr>
+    <tr>
+      <td>14</td>
+      <td>0.024276</td>
+      <td>0.024230</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>00:12</td>
+    </tr>
+    <tr>
+      <td>15</td>
+      <td>0.024207</td>
+      <td>0.024195</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>00:12</td>
+    </tr>
+    <tr>
+      <td>16</td>
+      <td>0.024145</td>
+      <td>0.024102</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>00:12</td>
+    </tr>
+    <tr>
+      <td>17</td>
+      <td>0.024043</td>
+      <td>0.023873</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>00:12</td>
+    </tr>
+    <tr>
+      <td>18</td>
+      <td>0.023990</td>
+      <td>0.023768</td>
+      <td>nan</td>
+      <td>0.000000</td>
+      <td>nan</td>
+      <td>00:12</td>
+    </tr>
+    <tr>
+      <td>19</td>
+      <td>0.023902</td>
+      <td>0.024197</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>00:12</td>
+    </tr>
+    <tr>
+      <td>20</td>
+      <td>0.023796</td>
+      <td>0.023771</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>00:11</td>
+    </tr>
+    <tr>
+      <td>21</td>
+      <td>0.023712</td>
+      <td>0.023990</td>
+      <td>0.024390</td>
+      <td>0.000379</td>
+      <td>0.000746</td>
+      <td>00:12</td>
+    </tr>
+    <tr>
+      <td>22</td>
+      <td>0.023653</td>
+      <td>0.023371</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>00:12</td>
+    </tr>
+    <tr>
+      <td>23</td>
+      <td>0.023596</td>
+      <td>0.023698</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>00:12</td>
+    </tr>
+    <tr>
+      <td>24</td>
+      <td>0.023485</td>
+      <td>0.023292</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>00:12</td>
+    </tr>
+    <tr>
+      <td>25</td>
+      <td>0.023412</td>
+      <td>0.023301</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>00:12</td>
+    </tr>
+    <tr>
+      <td>26</td>
+      <td>0.023337</td>
+      <td>0.023326</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>00:12</td>
+    </tr>
+    <tr>
+      <td>27</td>
+      <td>0.023183</td>
+      <td>0.022995</td>
+      <td>0.117647</td>
+      <td>0.000758</td>
+      <td>0.001505</td>
+      <td>00:12</td>
+    </tr>
+    <tr>
+      <td>28</td>
+      <td>0.023113</td>
+      <td>0.023047</td>
+      <td>0.100000</td>
+      <td>0.000758</td>
+      <td>0.001504</td>
+      <td>00:12</td>
+    </tr>
+    <tr>
+      <td>29</td>
+      <td>0.023019</td>
+      <td>0.023375</td>
+      <td>0.027778</td>
+      <td>0.000379</td>
+      <td>0.000747</td>
+      <td>00:12</td>
     </tr>
   </tbody>
 </table>
@@ -449,9 +680,8 @@ sidebar: home_sidebar
 
 <div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Ooops! This is not a good sign. How come our model is that good? Do we have a bug in how we sample the validation set? Was it a bad idea after all to combine all the files together? Given how I have set this up, we could have the first 5 seconds of a recording go into the train set and the next five into the validation set. This doesn't make a lot of sense indeed - we want our model to be able to identify the same species across recordings with different backgrounds / recorded with different equipment - we should be building train and validation sets based off different files.</p>
-<p>Maybe our metrics have a bug or there is some issue with our model / how the loss gets applied?</p>
-<p>My money is on the issue with sampling the validation set. But nonetheless, this will not stop us! The first order of business is to create an end to end pipeline, all the way to successful submission. Once we have this in place, we will be in a good position to start fiddling with making improvements.</p>
+<p>This doesn't look great! Maybe we have a bug somewhere in the training, maybe our code for caclulating metrics is bugged. It might also be that it will be very hard to learn from raw audio or that our architecture and the task are mismatched.</p>
+<p>I would guess the issue lies somwhere between training on raw audio and the architecture choice. Nonetheless, this will not stop us! The first order of business is to create an end to end pipeline, all the way to successful submission. Once we have this in place, we will be in a good position to start fiddling with making improvements.</p>
 
 </div>
 </div>
@@ -481,63 +711,6 @@ sidebar: home_sidebar
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">learn</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span> <span class="s1">&#39;data/models/first_model.pth&#39;</span><span class="p">)</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div>
-    {% endraw %}
-
-<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>We will need the following info for inference:</p>
-
-</div>
-</div>
-</div>
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">mean</span><span class="p">,</span> <span class="n">std</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-<div class="output_area">
-
-
-
-<div class="output_text output_subarea output_execute_result">
-<pre>(-6.132126808166504e-05, 0.04304003225515465)</pre>
-</div>
-
-</div>
-
-</div>
-</div>
-
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">pd</span><span class="o">.</span><span class="n">to_pickle</span><span class="p">(</span><span class="n">classes</span><span class="p">,</span> <span class="s1">&#39;data/classes.pkl&#39;</span><span class="p">)</span>
 </pre></div>
 
     </div>
