@@ -236,18 +236,19 @@ def audio_to_melspec(audio):
 # Comes from 01b_melspectrogram_dataset_for_pool.ipynb, cell
 
 class MelspecPoolDataset(Dataset):
-    def __init__(self, recs, classes, len_mult=20, specs_per_example=30):
+    def __init__(self, recs, classes, len_mult=20, specs_per_example=30, normalize=True):
         self.recs = recs
         self.vocab = classes
         self.specs_per_example = specs_per_example
         self.len_mult = len_mult
+        self.do_norm = normalize
 
     def __getitem__(self, idx):
         cls_idx = idx % len(self.vocab)
         recs = self.recs[classes[cls_idx]]
         path, duration = recs[np.random.randint(0, len(recs))]
         example = self.sample_specs(path, duration, self.specs_per_example)
-        example = self.normalize(example)
+        if self.do_norm: example = self.normalize(example)
         imgs = example.reshape(-1, 3, 80, 212)
         return imgs.astype(np.float32), self.one_hot_encode(cls_idx)
 
