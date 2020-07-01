@@ -2,7 +2,9 @@
 
 __all__ = ['NUM_WORKERS', 'SAMPLE_RATE', 'AudioDataset', 'classes', 'train_ds', 'valid_ds', 'audio_to_spec',
            'SpectrogramDataset', 'mel_bands', 'mel_min', 'mel_max', 'spectrogram', 'create_mel_filterbank',
-           'spectrogram_plans', 'audio_to_melspec', 'MelspecPoolDataset']
+           'spectrogram_plans', 'audio_to_melspec', 'MelspecPoolDataset', 'audio_to_melspec', 'filterbank',
+           'create_example', 'bin_items', 'MelspecShortishDataset', 'batch_sampler', 'BatchSampler',
+           'MelspecShortishValidatioDataset']
 
 # Cell
 
@@ -281,3 +283,124 @@ class MelspecPoolDataset(Dataset):
         return one_hot
     def __len__(self):
         return self.len_mult * len(self.vocab)
+
+# Comes from 01c_melspectrogram_dataset_for_pool_shortish.ipynb, cell
+
+filterbank = create_mel_filterbank(SAMPLE_RATE, 256, mel_bands, mel_min, mel_max)
+def audio_to_melspec(audio):
+    spec = spectrogram(audio, SAMPLE_RATE, 256, 128)
+    return (spec @ filterbank).T
+
+# Comes from 01c_melspectrogram_dataset_for_pool_shortish.ipynb, cell
+
+from collections import defaultdict
+from multiprocessing import Pool
+import torch
+
+def create_example(item):
+    cls_idx, path, num_specs = item
+    x, _ = sf.read(path)
+
+    example_duration = num_specs * 5 * SAMPLE_RATE
+    if x.shape[0] < example_duration:
+        x = np.tile(x, example_duration // x.shape[0] + 1)
+
+    start_frame = np.random.randint(0, x.shape[0] - example_duration+1)
+    x = x[start_frame:start_frame+example_duration]
+
+    xs = []
+    for i in range(num_specs):
+        for j in range(3):
+            start_frame = int((i * 3 + j) * 1.66 * SAMPLE_RATE)
+            xs.append(x[start_frame:start_frame+int(1.66*SAMPLE_RATE)])
+
+    specs = []
+    for x in xs:
+        specs.append(audio_to_melspec(x))
+    specs = np.stack(specs)
+    imgs = specs.reshape(-1, 3, 80, 212)
+
+    one_hot = np.zeros((264))
+    one_hot[cls_idx] = 1
+
+    return imgs.astype(np.float32), one_hot
+
+def bin_items(recs, classes):
+    binned_items = defaultdict(list)
+    for key in recs.keys():
+        for path, duration in recs[key]:
+            if duration < 7.5: binned_items[1].append((classes.index(key), path, 1))
+            elif duration < 12.5: binned_items[2].append((classes.index(key), path, 2))
+            elif duration < 25: binned_items[4].append((classes.index(key), path, 4))
+            elif duration < 45: binned_items[6].append((classes.index(key), path, 6))
+            else: binned_items[10].append((classes.index(key), path, 10))
+    return binned_items
+
+class MelspecShortishDataset(torch.utils.data.Dataset):
+    def __init__(self, recs, classes):
+        self.recs = recs
+        self.classes = classes
+        self.binned_items = bin_items(recs, classes)
+
+    def __len__(self): raise(NotImplementedError)
+
+    def __getitem__(self, bin_num):
+        item_idx = np.random.randint(0, len(self.binned_items[bin_num]))
+        item = self.binned_items[bin_num][item_idx]
+        return create_example(item)
+
+def batch_sampler(batch_size=16, len_mult=1):
+    for i in range(len_mult * 264 // batch_size):
+        chosen_bin = np.random.choice([1,2,4,6,10], p=[0.1, 0.225, 0.225, 0.225, 0.225])
+        yield [chosen_bin] * batch_size
+
+class BatchSampler():
+    def __init__(self, batch_size=16, len_mult=1):
+        self.batch_size = batch_size
+        self.len_mult = len_mult
+
+    def __iter__(self):
+        return batch_sampler(self.batch_size, self.len_mult)
+
+    def __len__(self):
+        return self.len_mult * 264 // self.batch_size
+
+# Comes from 01c_melspectrogram_dataset_for_pool_shortish.ipynb, cell
+
+class MelspecShortishValidatioDataset(torch.utils.data.Dataset):
+    def __init__(self, items, classes):
+        self.classes = classes
+        self.items = items
+
+    def __len__(self): return len(self.items)
+
+    def __getitem__(self, idx):
+        return self.create_example(self.items[idx])
+
+    def create_example(self, item):
+        cls_idx, path, num_specs = item
+        x, _ = sf.read(path)
+
+        example_duration = num_specs * 5 * SAMPLE_RATE
+        if x.shape[0] < example_duration:
+            x = np.tile(x, example_duration // x.shape[0] + 1)
+
+        start_frame = 0
+        x = x[start_frame:example_duration]
+
+        xs = []
+        for i in range(num_specs):
+            for j in range(3):
+                start_frame = int((i * 3 + j) * 1.66 * SAMPLE_RATE)
+                xs.append(x[start_frame:start_frame+int(1.66*SAMPLE_RATE)])
+
+        specs = []
+        for x in xs:
+            specs.append(audio_to_melspec(x))
+        specs = np.stack(specs)
+        imgs = specs.reshape(-1, 3, 80, 212)
+
+        one_hot = np.zeros((264))
+        one_hot[cls_idx] = 1
+
+        return imgs.astype(np.float32), one_hot
