@@ -4,7 +4,8 @@ __all__ = ['NUM_WORKERS', 'SAMPLE_RATE', 'AudioDataset', 'classes', 'train_ds', 
            'SpectrogramDataset', 'mel_bands', 'mel_min', 'mel_max', 'spectrogram', 'create_mel_filterbank',
            'spectrogram_plans', 'audio_to_melspec', 'MelspecPoolDataset', 'audio_to_melspec', 'filterbank',
            'create_example', 'bin_items', 'MelspecShortishDataset', 'batch_sampler', 'BatchSampler',
-           'MelspecShortishValidatioDataset']
+           'MelspecShortishValidatioDataset', 'translate_class', 'MelspecPoolDatasetNegativeClass',
+           'MelspecShortishValidatioDataset', 'bin_items_negative_class']
 
 # Cell
 
@@ -404,3 +405,122 @@ class MelspecShortishValidatioDataset(torch.utils.data.Dataset):
         one_hot[cls_idx] = 1
 
         return imgs.astype(np.float32), one_hot
+
+# Comes from 02ia_train_on_melspectrograms_pytorch_lme_pool_frontend_negative_class_refactored.ipynb, cell
+from collections import defaultdict
+
+def translate_class(items, old_vocab, new_vocab):
+    items_with_translated_class = []
+    for cls_idx, path, duration in items:
+        items_with_translated_class.append((new_vocab.index(old_vocab[cls_idx]), path, duration))
+    return items_with_translated_class
+
+class MelspecPoolDatasetNegativeClass(torch.utils.data.Dataset):
+    def __init__(self, items, items_neg_class, north_american_birds_common, len_mult=20, specs_per_example=30, reshape_to_3ch=True, spec_dur=1.66):
+        self.cls_idx_to_recs = defaultdict(list)
+        for item in items:
+            self.cls_idx_to_recs[item[0]].append(item)
+        self.items = items
+        self.items_neg_class = items_neg_class
+        self.all_classes = classes
+        self.vocab = north_american_birds_common
+        self.specs_per_example = specs_per_example
+        self.len_mult = len_mult
+        self.reshape_to_3ch = reshape_to_3ch
+        self.spec_dur = spec_dur
+
+    def __getitem__(self, idx):
+        if np.random.rand() > 0.54:
+            cls_idx = idx % len(self.vocab)
+            recs = self.cls_idx_to_recs[cls_idx]
+            _, path, duration = recs[np.random.randint(0, len(recs))]
+        else:
+            cls_idx = -1
+            _, path, duration = self.items_neg_class[np.random.randint(len(self.items_neg_class))]
+
+        example = self.sample_specs(path, duration, self.specs_per_example)
+        if self.reshape_to_3ch: example = example.reshape(-1, 3, 80, 212)
+        return example.astype(np.float32), self.one_hot_encode(cls_idx)
+
+    def sample_specs(self, path, duration, count):
+        x, _ = sf.read(path)
+
+        if x.shape[0] < self.spec_dur*SAMPLE_RATE:
+            x =  np.tile(x, int(self.spec_dur*SAMPLE_RATE) // x.shape[0] + 1 ) # the shortest rec in the train set is 0.39 sec
+
+        xs = []
+        for _ in range(count):
+            start_frame = int(np.random.rand() * (x.shape[0] - self.spec_dur * SAMPLE_RATE))
+            xs.append(x[start_frame:start_frame+int(self.spec_dur*SAMPLE_RATE)])
+
+        specs = []
+        for x in xs:
+            specs.append(audio_to_melspec(x))
+        return np.stack(specs)
+
+    def show(self, idx):
+        x = self[idx][0][0]
+        return plt.imshow(x.transpose(1,2,0)[:, :, 0])
+
+    def one_hot_encode(self, y):
+        one_hot = np.zeros((len(self.vocab)))
+        if y != -1:
+            one_hot[y] = 1
+        return one_hot
+
+    def __len__(self):
+        return self.len_mult * len(self.vocab)
+
+# Comes from 02ia_train_on_melspectrograms_pytorch_lme_pool_frontend_negative_class_refactored.ipynb, cell
+class MelspecShortishValidatioDataset(torch.utils.data.Dataset):
+    def __init__(self, items, vocab, negative_class_items=[], reshape_to_3ch=True):
+        self.vocab = vocab
+        self.items = items + negative_class_items
+        self.reshape_to_3ch = reshape_to_3ch
+
+    def __len__(self): return len(self.items)
+
+    def __getitem__(self, idx):
+        item = self.items[idx]
+
+        return self.create_example(self.items[idx])
+
+    def create_example(self, item):
+        cls_idx, path, num_specs = item
+
+        x, _ = sf.read(path)
+
+        example_duration = num_specs * 5 * SAMPLE_RATE
+        if x.shape[0] < example_duration:
+            x = np.tile(x, example_duration // x.shape[0] + 1)
+
+        start_frame = 0
+        x = x[start_frame:example_duration]
+
+        xs = []
+        for i in range(num_specs):
+            for j in range(3):
+                start_frame = int((i * 3 + j) * 1.66 * SAMPLE_RATE)
+                xs.append(x[start_frame:start_frame+int(1.66*SAMPLE_RATE)])
+
+        specs = []
+        for x in xs:
+            specs.append(audio_to_melspec(x))
+        specs = np.stack(specs)
+        if self.reshape_to_3ch: specs = specs.reshape(-1, 3, 80, 212)
+
+        one_hot = np.zeros((len(self.vocab)))
+        if cls_idx != -1: one_hot[cls_idx] = 1
+
+        return specs.astype(np.float32), one_hot
+
+# Comes from 02ia_train_on_melspectrograms_pytorch_lme_pool_frontend_negative_class_refactored.ipynb, cell
+def bin_items_negative_class(items):
+    binned_items = defaultdict(list)
+    for cls_idx, path, duration in items:
+        if duration < 7.5: binned_items[1].append((cls_idx, path, 1))
+        elif duration < 12.5: binned_items[2].append((cls_idx, path, 2))
+        elif duration < 25: binned_items[4].append((cls_idx, path, 4))
+        elif duration < 45: binned_items[6].append((cls_idx, path, 6))
+        else: binned_items[10].append((cls_idx, path, 10))
+    return binned_items

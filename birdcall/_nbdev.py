@@ -24,12 +24,15 @@ index = {"NUM_WORKERS": "01_getting_started.ipynb",
          "MelspecShortishDataset": "01c_melspectrogram_dataset_for_pool_shortish.ipynb",
          "batch_sampler": "01c_melspectrogram_dataset_for_pool_shortish.ipynb",
          "BatchSampler": "01c_melspectrogram_dataset_for_pool_shortish.ipynb",
-         "MelspecShortishValidatioDataset": "01c_melspectrogram_dataset_for_pool_shortish.ipynb",
+         "MelspecShortishValidatioDataset": "02ia_train_on_melspectrograms_pytorch_lme_pool_frontend_negative_class_refactored.ipynb",
          "preds_to_tp_fp_fn": "02_train_on_raw_audio.ipynb",
          "precision": "02_train_on_raw_audio.ipynb",
          "recall": "02_train_on_raw_audio.ipynb",
          "f1": "02_train_on_raw_audio.ipynb",
-         "lme_pool": "02g_train_on_melspectrograms_pytorch_lme_pool_frontend.ipynb"}
+         "lme_pool": "02g_train_on_melspectrograms_pytorch_lme_pool_frontend.ipynb",
+         "translate_class": "02ia_train_on_melspectrograms_pytorch_lme_pool_frontend_negative_class_refactored.ipynb",
+         "MelspecPoolDatasetNegativeClass": "02ia_train_on_melspectrograms_pytorch_lme_pool_frontend_negative_class_refactored.ipynb",
+         "bin_items_negative_class": "02ia_train_on_melspectrograms_pytorch_lme_pool_frontend_negative_class_refactored.ipynb"}
 
 modules = ["data.py",
            "metrics.py",
