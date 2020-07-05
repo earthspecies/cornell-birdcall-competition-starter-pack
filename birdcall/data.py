@@ -2,10 +2,11 @@
 
 __all__ = ['NUM_WORKERS', 'SAMPLE_RATE', 'AudioDataset', 'classes', 'train_ds', 'valid_ds', 'audio_to_spec',
            'SpectrogramDataset', 'mel_bands', 'mel_min', 'mel_max', 'spectrogram', 'create_mel_filterbank',
-           'spectrogram_plans', 'audio_to_melspec', 'MelspecPoolDataset', 'audio_to_melspec', 'filterbank',
-           'create_example', 'bin_items', 'MelspecShortishDataset', 'batch_sampler', 'BatchSampler',
-           'MelspecShortishValidatioDataset', 'translate_class', 'MelspecPoolDatasetNegativeClass',
-           'MelspecShortishValidatioDataset', 'bin_items_negative_class']
+           'spectrogram_plans', 'audio_to_melspec', 'MelspecPoolDataset', 'MelspecPoolWithShiftedDataset',
+           'SoundscapeMelspecPoolDataset', 'audio_to_melspec', 'filterbank', 'create_example', 'bin_items',
+           'MelspecShortishDataset', 'batch_sampler', 'BatchSampler', 'MelspecShortishValidatioDataset',
+           'translate_class', 'MelspecPoolDatasetNegativeClass', 'MelspecShortishValidatioDataset',
+           'bin_items_negative_class']
 
 # Cell
 
@@ -134,6 +135,7 @@ class SpectrogramDataset(Dataset):
 
 from pyfftw.builders import rfft as rfft_builder
 from pyfftw import empty_aligned
+from pathlib import Path
 
 mel_bands=80
 mel_min=27.5
@@ -284,6 +286,96 @@ class MelspecPoolDataset(Dataset):
         return one_hot
     def __len__(self):
         return self.len_mult * len(self.vocab)
+
+# Comes from 01b_melspectrogram_dataset_for_pool.ipynb, cell
+
+class MelspecPoolWithShiftedDataset(Dataset):
+    def __init__(self, recs, classes, len_mult=60, specs_per_example=30, shifted_ratio=0.2):
+        self.recs = recs
+        self.vocab = classes
+        self.specs_per_example = specs_per_example
+        self.len_mult = len_mult
+        self.shifted_ratio = 0.2
+        self.shifted_recs = self.get_shifted_recs()
+
+    def __getitem__(self, idx):
+        cls_idx = idx % len(self.vocab)
+        if np.random.rand() > self.shifted_ratio:
+            shifted = 0.
+            recs = self.recs[classes[cls_idx]]
+        else:
+            shifted = 1.
+            recs = self.shifted_recs
+        path, duration = recs[np.random.randint(0, len(recs))]
+        example = self.sample_specs(path, duration, self.specs_per_example)
+        imgs = example.reshape(-1, 3, 80, 212)
+        return imgs.astype(np.float32), self.one_hot_encode(cls_idx), shifted
+
+    def sample_specs(self, path, duration, count):
+        x, _ = sf.read(path)
+
+        if x.shape[0] < 1.66*SAMPLE_RATE:
+            x =  np.tile(x, 5) # the shortest rec in the train set is 0.39 sec
+
+        xs = []
+        for _ in range(count):
+            start_frame = int(np.random.rand() * (x.shape[0] - 1.66 * SAMPLE_RATE))
+            xs.append(x[start_frame:start_frame+int(1.66*SAMPLE_RATE)])
+
+        specs = []
+        for x in xs:
+            specs.append(audio_to_melspec(x))
+        return np.stack(specs)
+
+    def get_shifted_recs(self):
+        recs = []
+        for path in Path('data/shifted').iterdir():
+            recs.append((path, sf.info(path).duration))
+        return recs
+
+    def show(self, idx):
+        x = self[idx][0][0]
+        return plt.imshow(x.transpose(1,2,0)[:, :, 0])
+
+    def one_hot_encode(self, y):
+        one_hot = np.zeros((len(self.vocab)))
+        one_hot[y] = 1
+        return one_hot
+    def __len__(self):
+        return self.len_mult * len(self.vocab)
+
+# Comes from 01b_melspectrogram_dataset_for_pool.ipynb, cell
+class SoundscapeMelspecPoolDataset(Dataset):
+    def __init__(self, items, classes):
+        self.items = items
+        self.vocab = classes
+
+    def __getitem__(self, idx):
+        classes, path, offset = self.items[idx]
+        cls_idxs = [self.vocab.index(cls) for cls in classes]
+        example = self.get_specs(path, offset)
+        imgs = example.reshape(-1, 3, 80, 212)
+        return imgs.astype(np.float32), self.one_hot_encode(cls_idxs)
+
+    def get_specs(self, path, offset):
+        x, _ = sf.read(path, frames=5*SAMPLE_RATE, start=offset*SAMPLE_RATE)
+
+        xs = []
+        for i in range(3):
+            start_frame = int(i * 1.66 * SAMPLE_RATE)
+            xs.append(x[start_frame:start_frame+int(1.66*SAMPLE_RATE)])
+
+        specs = []
+        for x in xs:
+            specs.append(audio_to_melspec(x))
+        return np.stack(specs)
+
+    def one_hot_encode(self, ys):
+        one_hot = np.zeros((len(self.vocab)))
+        for y in ys: one_hot[y] = 1
+        return one_hot
+    def __len__(self):
+        return len(self.items)
 
 # Comes from 01c_melspectrogram_dataset_for_pool_shortish.ipynb, cell
 
