@@ -5,7 +5,7 @@ __all__ = ['NUM_WORKERS', 'SAMPLE_RATE', 'AudioDataset', 'classes', 'train_ds', 
            'spectrogram_plans', 'audio_to_melspec', 'MelspecPoolDataset', 'MelspecPoolWithShiftedDataset',
            'SoundscapeMelspecPoolDataset', 'audio_to_melspec', 'filterbank', 'create_example', 'bin_items',
            'MelspecShortishDataset', 'batch_sampler', 'BatchSampler', 'MelspecShortishValidatioDataset',
-           'translate_class', 'MelspecPoolDatasetNegativeClass', 'MelspecShortishValidatioDataset',
+           'translate_class', 'MelspecPoolDatasetNegativeClass', 'MelspecShortishValidatioDatasetNegativeClass',
            'bin_items_negative_class']
 
 # Cell
@@ -258,19 +258,31 @@ class MelspecPoolDataset(Dataset):
         return imgs.astype(np.float32), self.one_hot_encode(cls_idx)
 
     def sample_specs(self, path, duration, count):
-        x, _ = sf.read(path)
+        if path.name.split('.')[1] == 'wav':
+            x, _ = sf.read(path)
 
-        if x.shape[0] < 1.66*SAMPLE_RATE:
-            x =  np.tile(x, 5) # the shortest rec in the train set is 0.39 sec
+            if x.shape[0] < 1.66*SAMPLE_RATE:
+                x =  np.tile(x, 5) # the shortest rec in the train set is 0.39 sec
 
-        xs = []
-        for _ in range(count):
-            start_frame = int(np.random.rand() * (x.shape[0] - 1.66 * SAMPLE_RATE))
-            xs.append(x[start_frame:start_frame+int(1.66*SAMPLE_RATE)])
+            xs = []
+            for _ in range(count):
+                start_frame = int(np.random.rand() * (x.shape[0] - 1.66 * SAMPLE_RATE))
+                xs.append(x[start_frame:start_frame+int(1.66*SAMPLE_RATE)])
 
-        specs = []
-        for x in xs:
-            specs.append(audio_to_melspec(x))
+            specs = []
+            for x in xs:
+                specs.append(audio_to_melspec(x))
+        else: # .npy
+            frames_per_spec = 212
+            x = np.load(path)
+            if x.shape[1] < frames_per_spec:
+                x = np.tile(x, frames_per_spec // x.shape[1] + 1)
+
+            specs = []
+            for _ in range(count):
+                start_frame = int(np.random.rand() * (x.shape[1] - frames_per_spec))
+                specs.append(x[:, start_frame:start_frame+frames_per_spec])
+
         return np.stack(specs)
 
     def normalize(self, example):
@@ -358,16 +370,26 @@ class SoundscapeMelspecPoolDataset(Dataset):
         return imgs.astype(np.float32), self.one_hot_encode(cls_idxs)
 
     def get_specs(self, path, offset):
-        x, _ = sf.read(path, frames=5*SAMPLE_RATE, start=offset*SAMPLE_RATE)
+        if path.name.split('.')[1] == 'wav':
+            x, _ = sf.read(path, frames=5*SAMPLE_RATE, start=offset*SAMPLE_RATE)
 
-        xs = []
-        for i in range(3):
-            start_frame = int(i * 1.66 * SAMPLE_RATE)
-            xs.append(x[start_frame:start_frame+int(1.66*SAMPLE_RATE)])
+            xs = []
+            for i in range(3):
+                start_frame = int(i * 1.66 * SAMPLE_RATE)
+                xs.append(x[start_frame:start_frame+int(1.66*SAMPLE_RATE)])
 
-        specs = []
-        for x in xs:
-            specs.append(audio_to_melspec(x))
+            specs = []
+            for x in xs:
+                specs.append(audio_to_melspec(x))
+        else: # .npy
+            frames_per_spec = 212
+            x = np.load(path)
+
+            specs = []
+            for i in range(3):
+                start_frame = offset+i*frames_per_spec
+                specs.append(x[:, start_frame:start_frame+frames_per_spec])
+
         return np.stack(specs)
 
     def one_hot_encode(self, ys):
@@ -472,24 +494,39 @@ class MelspecShortishValidatioDataset(torch.utils.data.Dataset):
 
     def create_example(self, item):
         cls_idx, path, num_specs = item
-        x, _ = sf.read(path)
+        if path.name.split('.')[1] == 'wav':
+            x, _ = sf.read(path)
 
-        example_duration = num_specs * 5 * SAMPLE_RATE
-        if x.shape[0] < example_duration:
-            x = np.tile(x, example_duration // x.shape[0] + 1)
+            example_duration = num_specs * 5 * SAMPLE_RATE
+            if x.shape[0] < example_duration:
+                x = np.tile(x, example_duration // x.shape[0] + 1)
 
-        start_frame = 0
-        x = x[start_frame:example_duration]
+            start_frame = 0
+            x = x[start_frame:example_duration]
 
-        xs = []
-        for i in range(num_specs):
-            for j in range(3):
-                start_frame = int((i * 3 + j) * 1.66 * SAMPLE_RATE)
-                xs.append(x[start_frame:start_frame+int(1.66*SAMPLE_RATE)])
+            xs = []
+            for i in range(num_specs):
+                for j in range(3):
+                    start_frame = int((i * 3 + j) * 1.66 * SAMPLE_RATE)
+                    xs.append(x[start_frame:start_frame+int(1.66*SAMPLE_RATE)])
 
-        specs = []
-        for x in xs:
-            specs.append(audio_to_melspec(x))
+            specs = []
+            for x in xs:
+                specs.append(audio_to_melspec(x))
+        else: # .npy
+            frames_per_spec = 212
+            x = np.load(path)
+            example_duration = num_specs * 3 * frames_per_spec
+
+            if x.shape[1] < example_duration:
+                x = np.tile(x, (example_duration // x.shape[1] + 1))
+
+            specs = []
+            for i in range(num_specs):
+                for j in range(3):
+                    start_frame = int((i * 3 + j) * frames_per_spec)
+                    specs.append(x[:, start_frame:start_frame+frames_per_spec])
+
         specs = np.stack(specs)
         imgs = specs.reshape(-1, 3, 80, 212)
 
@@ -564,7 +601,7 @@ class MelspecPoolDatasetNegativeClass(torch.utils.data.Dataset):
         return self.len_mult * len(self.vocab)
 
 # Comes from 02ia_train_on_melspectrograms_pytorch_lme_pool_frontend_negative_class_refactored.ipynb, cell
-class MelspecShortishValidatioDataset(torch.utils.data.Dataset):
+class MelspecShortishValidatioDatasetNegativeClass(torch.utils.data.Dataset):
     def __init__(self, items, vocab, negative_class_items=[], reshape_to_3ch=True):
         self.vocab = vocab
         self.items = items + negative_class_items
